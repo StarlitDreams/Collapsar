@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Collapsar.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Collapsar.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

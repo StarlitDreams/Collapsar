@@ -1,0 +1,51 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 26, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "linux-dev",
+      "displayName": "Linux dev (no CUDA)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "COLLAPSAR_WITH_CUDA": "OFF",
+        "COLLAPSAR_BUILD_BRIDGE": "OFF"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "linux-cuda",
+      "displayName": "Linux + CUDA",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-cuda",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "COLLAPSAR_WITH_CUDA": "ON",
+        "COLLAPSAR_BUILD_BRIDGE": "OFF"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "windows-cuda",
+      "displayName": "Windows + CUDA + bridge",
+      "generator": "Visual Studio 17 2022",
+      "architecture": { "value": "x64", "strategy": "set" },
+      "binaryDir": "${sourceDir}/build/windows-cuda",
+      "cacheVariables": {
+        "COLLAPSAR_WITH_CUDA": "ON",
+        "COLLAPSAR_BUILD_BRIDGE": "ON"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "linux-dev",    "configurePreset": "linux-dev"    },
+    { "name": "linux-cuda",   "configurePreset": "linux-cuda"   },
+    { "name": "windows-cuda", "configurePreset": "windows-cuda", "configuration": "Release" }
+  ],
+  "testPresets": [
+    { "name": "linux-dev",  "configurePreset": "linux-dev",  "output": { "outputOnFailure": true } },
+    { "name": "linux-cuda", "configurePreset": "linux-cuda", "output": { "outputOnFailure": true } }
+  ]
+}

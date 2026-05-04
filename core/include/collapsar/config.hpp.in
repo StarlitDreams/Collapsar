@@ -1,0 +1,13 @@
+#pragma once
+
+// Collapsar build-time configuration.
+//
+// COLLAPSAR_HAS_CUDA is defined to 1 when the CUDA + nvCOMP backend is compiled
+// in. Code that conditionally calls into the GPU codec must guard on this.
+
+#cmakedefine01 COLLAPSAR_HAS_CUDA
+
+#define COLLAPSAR_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define COLLAPSAR_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define COLLAPSAR_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#define COLLAPSAR_VERSION_STRING "@PROJECT_VERSION@"

@@ -1,0 +1,78 @@
+# Build outputs
+build/
+out/
+cmake-build-*/
+bin/
+lib/
+*.o
+*.obj
+*.lib
+*.a
+*.so
+*.so.*
+*.dll
+*.dylib
+*.exp
+*.pdb
+*.ilk
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Visual Studio / VS Code / Rider
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.opendb
+*.VC.db
+.cache/
+
+# C# / .NET
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.csproj.user
+*.GeneratedMSBuildEditorConfig.props
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# WinUI 3 / WinAppSDK
+AppPackages/
+BundleArtifacts/
+Generated Files/
+*.appxbundle
+*.appxupload
+*.appx
+*.msix
+*.msixbundle
+
+# CUDA
+*.fatbin
+*.fatbin.c
+*.cudafe1.*
+*.cubin
+*.module_id
+*.ptx
+
+# Misc
+*.swp
+*.bak
+*~
+.DS_Store
+Thumbs.db
