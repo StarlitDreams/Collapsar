@@ -56,9 +56,13 @@
       "generator": "Visual Studio 18 2026",
       "architecture": { "value": "x64", "strategy": "set" },
       "binaryDir": "${sourceDir}/build/windows-cuda",
+      "toolchainFile": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
         "COLLAPSAR_WITH_CUDA": "ON",
-        "COLLAPSAR_BUILD_BRIDGE": "ON"
+        "COLLAPSAR_BUILD_BRIDGE": "ON",
+        "NVCOMP_ROOT": "C:/Program Files/NVIDIA nvCOMP/v5.2",
+        "NVCOMP_DIR": "C:/Program Files/NVIDIA nvCOMP/v5.2/lib/13/cmake/nvcomp"
       },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     },
@@ -68,9 +72,13 @@
       "generator": "Visual Studio 17 2022",
       "architecture": { "value": "x64", "strategy": "set" },
       "binaryDir": "${sourceDir}/build/windows-cuda-vs2022",
+      "toolchainFile": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
         "COLLAPSAR_WITH_CUDA": "ON",
-        "COLLAPSAR_BUILD_BRIDGE": "ON"
+        "COLLAPSAR_BUILD_BRIDGE": "ON",
+        "NVCOMP_ROOT": "C:/Program Files/NVIDIA nvCOMP/v5.2",
+        "NVCOMP_DIR": "C:/Program Files/NVIDIA nvCOMP/v5.2/lib/13/cmake/nvcomp"
       },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     }

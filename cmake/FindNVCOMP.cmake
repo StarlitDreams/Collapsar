@@ -10,6 +10,9 @@ set(_nvcomp_search_roots
     $ENV{NVCOMP_ROOT}
     /usr/local/nvcomp
     /opt/nvidia/nvcomp
+    "C:/Program Files/NVIDIA nvCOMP/v5.2"
+    "C:/Program Files/NVIDIA nvCOMP/v5.1"
+    "C:/Program Files/NVIDIA nvCOMP/v5.0"
     "C:/Program Files/NVIDIA Corporation/nvcomp"
 )
 
@@ -22,7 +25,7 @@ find_path(NVCOMP_INCLUDE_DIR
 find_library(NVCOMP_LIBRARY
     NAMES nvcomp
     HINTS ${_nvcomp_search_roots}
-    PATH_SUFFIXES lib lib64
+    PATH_SUFFIXES lib/13 lib/12 lib lib64
 )
 
 find_package_handle_standard_args(NVCOMP
