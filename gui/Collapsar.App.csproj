@@ -8,12 +8,14 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
-    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <WindowsPackageType>None</WindowsPackageType>
+    <!-- Suppress the "no PublishProfile for ARM64" warning when packaging
+         the unpackaged WinExe. -->
+    <DisableHasPackageBeenInitializedCheck>true</DisableHasPackageBeenInitializedCheck>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,12 +24,30 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
   </ItemGroup>
 
-  <!-- Reference the C++/CLI bridge produced by the Collapsar.Bridge target. -->
+  <!-- The native Collapsar.Bridge DLL is consumed via P/Invoke. We copy it
+       (and its zlib dependency) into the GUI's output directory at build
+       time so users only need to launch Collapsar.App.exe. -->
   <ItemGroup>
-    <Reference Include="Collapsar.Bridge">
-      <HintPath>..\build\windows-cuda\bridge\Release\Collapsar.Bridge.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
+    <None Include="..\build\windows\bin\Release\Collapsar.Bridge.dll"
+          Condition="Exists('..\build\windows\bin\Release\Collapsar.Bridge.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Collapsar.Bridge.dll</Link>
+    </None>
+    <None Include="..\build\windows\bin\Release\z.dll"
+          Condition="Exists('..\build\windows\bin\Release\z.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>z.dll</Link>
+    </None>
+    <None Include="..\build\windows-cuda\bin\Release\Collapsar.Bridge.dll"
+          Condition="Exists('..\build\windows-cuda\bin\Release\Collapsar.Bridge.dll') AND !Exists('..\build\windows\bin\Release\Collapsar.Bridge.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Collapsar.Bridge.dll</Link>
+    </None>
+    <None Include="..\build\windows-cuda\bin\Release\z.dll"
+          Condition="Exists('..\build\windows-cuda\bin\Release\z.dll') AND !Exists('..\build\windows\bin\Release\z.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>z.dll</Link>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

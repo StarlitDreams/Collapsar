@@ -1,5 +1,12 @@
 # ---------- Generated config header -------------------------------------------
 
+# config.hpp.in checks COLLAPSAR_HAS_CUDA (a 0/1 flag set by the top-level
+# CMakeLists once it has actually located CUDA + nvCOMP). Keep it in sync
+# with the option so existing call sites (#if COLLAPSAR_HAS_CUDA) still work.
+if(NOT DEFINED COLLAPSAR_HAS_CUDA)
+    set(COLLAPSAR_HAS_CUDA ${COLLAPSAR_WITH_CUDA})
+endif()
+
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/collapsar/config.hpp.in"
     "${CMAKE_CURRENT_BINARY_DIR}/generated/collapsar/config.hpp"

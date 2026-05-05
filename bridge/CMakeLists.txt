@@ -1,34 +1,38 @@
-# Collapsar.Bridge — C++/CLI assembly that wraps collapsar_core for managed
-# consumers (the WinUI 3 GUI). Only meaningful on Windows + MSVC.
+# Collapsar.Bridge — flat C ABI shared library wrapping collapsar_core.
+#
+# Managed callers (the WinUI 3 GUI) consume this DLL via P/Invoke. We avoid
+# C++/CLI here on purpose: it requires a separate Visual Studio workload that
+# isn't installed by default, conflicts with several of the project's normal
+# warning/optimisation flags, and tends to break across MSVC point releases.
+# A plain C ABI builds on every Windows + MSVC machine and is faster to
+# iterate on.
 
-if(NOT WIN32 OR NOT MSVC)
-    message(FATAL_ERROR "Collapsar.Bridge can only be built with MSVC on Windows")
+if(NOT WIN32)
+    message(FATAL_ERROR "Collapsar.Bridge currently targets Windows only")
 endif()
 
-add_library(Collapsar.Bridge SHARED
-    src/Bridge.cpp
-    src/Bridge.h
-    src/AssemblyInfo.cpp
+add_library(collapsar_bridge SHARED
+    src/c_bridge.cpp
+    src/c_bridge.h
 )
 
-# Enable C++/CLI mode on this target. The /clr switch is incompatible with
-# /EHsc and /RTC*, so override the inherited project flags here.
-set_target_properties(Collapsar.Bridge PROPERTIES
-    COMMON_LANGUAGE_RUNTIME    ""        # /clr (Pure CLR — managed + native interop)
-    DOTNET_TARGET_FRAMEWORK    "net8.0-windows"
-    VS_DOTNET_REFERENCES       "System;System.Core"
-    VS_GLOBAL_ROOTNAMESPACE    "Collapsar.Bridge"
+# Choose a stable output name regardless of the cmake target identifier.
+set_target_properties(collapsar_bridge PROPERTIES
+    OUTPUT_NAME "Collapsar.Bridge"
+    PREFIX ""                         # don't add lib... on MinGW
 )
 
-target_compile_options(Collapsar.Bridge PRIVATE
-    /clr
-    /EHa                        # /clr requires /EHa rather than /EHsc
+target_link_libraries(collapsar_bridge PRIVATE collapsar::core)
+target_compile_features(collapsar_bridge PRIVATE cxx_std_20)
+
+if(MSVC)
+    target_compile_options(collapsar_bridge PRIVATE /W4 /permissive-)
+endif()
+
+# Make sure the resulting DLL lands in the global runtime output directory
+# (same place collapsar.exe is dropped) so the GUI csproj can pick it up via
+# a single relative path that's identical across generators.
+set_target_properties(collapsar_bridge PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
 )
-
-# /clr disables some optimisations and conflicts with these flags inherited
-# from the top-level CMakeLists.
-string(REGEX REPLACE "/EHsc" ""    CMAKE_CXX_FLAGS    "${CMAKE_CXX_FLAGS}")
-string(REGEX REPLACE "/RTC[1csu]+" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-
-target_link_libraries(Collapsar.Bridge PRIVATE collapsar::core)
-target_compile_features(Collapsar.Bridge PRIVATE cxx_std_20)

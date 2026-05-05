@@ -30,6 +30,9 @@ void PinnedBuffer::release() noexcept {
     if (!data_) return;
 #if COLLAPSAR_HAS_CUDA
     cudaFreeHost(data_);
+#elif defined(_WIN32)
+    // _aligned_malloc must be paired with _aligned_free.
+    _aligned_free(data_);
 #else
     std::free(data_);
 #endif

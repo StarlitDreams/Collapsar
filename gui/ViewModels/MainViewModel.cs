@@ -1,14 +1,15 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using Collapsar.Bridge;
+using Collapsar.App.Bridge;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
 
 namespace Collapsar.App.ViewModels;
 
-// MVVM façade between the WinUI views and the Collapsar.Bridge engine.
+// MVVM façade between the WinUI views and the Collapsar bridge.
+//
 // All long-running work runs off the UI thread; progress callbacks marshal
 // back via the captured DispatcherQueue so UI bindings stay on-thread.
 public partial class MainViewModel : ObservableObject
@@ -48,7 +49,19 @@ public partial class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
-        var caps = CompressionEngine.ProbeCapabilities();
+        CapabilitiesInfo caps;
+        try
+        {
+            caps = CompressionEngine.ProbeCapabilities();
+        }
+        catch (DllNotFoundException)
+        {
+            // The native bridge wasn't deployed alongside the GUI. Fall back
+            // to a CPU-only display so the UI still loads cleanly; Pack will
+            // surface the missing DLL when the user tries to run a job.
+            caps = new CapabilitiesInfo();
+        }
+
         GpuAvailable = caps.HasCuda && caps.CudaDeviceCount > 0;
         GpuStatus    = GpuAvailable
             ? $"GPU: {caps.CudaDeviceNames[0]}"
@@ -79,12 +92,21 @@ public partial class MainViewModel : ObservableObject
         StatusLine      = "Starting…";
         ProgressPercent = 0;
 
-        // Construct the engine on demand; reuse across runs in the same session.
-        _engine ??= new CompressionEngine(
-            cudaDevice: 0,
-            enableGpu:  UseGpu && GpuAvailable,
-            ioThreads:  4,
-            cpuThreads: 0);
+        try
+        {
+            // Construct the engine on demand; reuse across runs in the same
+            // session.
+            _engine ??= new CompressionEngine(
+                cudaDevice: 0,
+                enableGpu:  UseGpu && GpuAvailable,
+                ioThreads:  4,
+                cpuThreads: 0);
+        }
+        catch (DllNotFoundException ex)
+        {
+            StatusLine = $"Error: {ex.Message}. Build the bridge first (cmake --build --preset windows).";
+            return;
+        }
 
         var inputs = new string[Inputs.Count];
         Inputs.CopyTo(inputs, 0);
@@ -92,12 +114,12 @@ public partial class MainViewModel : ObservableObject
         var options = new JobOptions
         {
             Format    = ParseFormat(SelectedFormat),
-            Algorithm = UseGpu && GpuAvailable ? Algorithm.Auto : Algorithm.CpuDeflate,
+            Algorithm = (UseGpu && GpuAvailable) ? BridgeAlgorithm.Auto : BridgeAlgorithm.CpuDeflate,
             Level     = ParseLevel(SelectedLevel),
             Overwrite = true,
         };
 
-        var progress = new ProgressDelegate(snap =>
+        ProgressHandler progress = snap =>
         {
             // Marshal back to the UI thread before touching bound properties.
             _dispatcher.TryEnqueue(() =>
@@ -110,14 +132,14 @@ public partial class MainViewModel : ObservableObject
                            + $"{snap.OutputBytes  / (1024 * 1024)} MiB  "
                            + $"({snap.ThroughputMiBps:F0} MiB/s)";
             });
-        });
+        };
 
         var result = await Task.Run(() => _engine!.Pack(inputs, OutputPath!, options, progress));
 
         _dispatcher.TryEnqueue(() =>
         {
             ProgressPercent = 100;
-            StatusLine = result.Status == StatusCode.Ok
+            StatusLine = result.Status == BridgeStatus.Ok
                 ? $"Done — {result.OutputBytes / 1024} KiB written, "
                   + $"{result.GpuBlocks} GPU / {result.CpuBlocks} CPU blocks, "
                   + $"{result.ElapsedMillis} ms"
@@ -131,17 +153,17 @@ public partial class MainViewModel : ObservableObject
         StatusLine = "Cancelling…";
     }
 
-    private static Format ParseFormat(string s) => s switch
+    private static BridgeFormat ParseFormat(string s) => s switch
     {
-        "Gzip" => Format.Gzip,
-        "Zstd" => Format.Zstd,
-        _      => Format.Zip,
+        "Gzip" => BridgeFormat.Gzip,
+        "Zstd" => BridgeFormat.Zstd,
+        _      => BridgeFormat.Zip,
     };
 
-    private static Level ParseLevel(string s) => s switch
+    private static BridgeLevel ParseLevel(string s) => s switch
     {
-        "Fast" => Level.Fast,
-        "Best" => Level.Best,
-        _      => Level.Balanced,
+        "Fast" => BridgeLevel.Fast,
+        "Best" => BridgeLevel.Best,
+        _      => BridgeLevel.Balanced,
     };
 }

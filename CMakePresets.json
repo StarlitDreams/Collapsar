@@ -27,11 +27,47 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
     },
     {
-      "name": "windows-cuda",
-      "displayName": "Windows + CUDA + bridge",
+      "name": "windows",
+      "displayName": "Windows (VS 2026, CPU only, with GUI bridge)",
+      "generator": "Visual Studio 18 2026",
+      "architecture": { "value": "x64", "strategy": "set" },
+      "binaryDir": "${sourceDir}/build/windows",
+      "cacheVariables": {
+        "COLLAPSAR_WITH_CUDA": "OFF",
+        "COLLAPSAR_BUILD_BRIDGE": "ON"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "windows-vs2022",
+      "displayName": "Windows (VS 2022, CPU only, with GUI bridge)",
       "generator": "Visual Studio 17 2022",
       "architecture": { "value": "x64", "strategy": "set" },
+      "binaryDir": "${sourceDir}/build/windows-vs2022",
+      "cacheVariables": {
+        "COLLAPSAR_WITH_CUDA": "OFF",
+        "COLLAPSAR_BUILD_BRIDGE": "ON"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "windows-cuda",
+      "displayName": "Windows + CUDA + bridge (VS 2026)",
+      "generator": "Visual Studio 18 2026",
+      "architecture": { "value": "x64", "strategy": "set" },
       "binaryDir": "${sourceDir}/build/windows-cuda",
+      "cacheVariables": {
+        "COLLAPSAR_WITH_CUDA": "ON",
+        "COLLAPSAR_BUILD_BRIDGE": "ON"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "windows-cuda-vs2022",
+      "displayName": "Windows + CUDA + bridge (VS 2022)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": { "value": "x64", "strategy": "set" },
+      "binaryDir": "${sourceDir}/build/windows-cuda-vs2022",
       "cacheVariables": {
         "COLLAPSAR_WITH_CUDA": "ON",
         "COLLAPSAR_BUILD_BRIDGE": "ON"
@@ -40,12 +76,16 @@
     }
   ],
   "buildPresets": [
-    { "name": "linux-dev",    "configurePreset": "linux-dev"    },
-    { "name": "linux-cuda",   "configurePreset": "linux-cuda"   },
-    { "name": "windows-cuda", "configurePreset": "windows-cuda", "configuration": "Release" }
+    { "name": "linux-dev",            "configurePreset": "linux-dev"    },
+    { "name": "linux-cuda",           "configurePreset": "linux-cuda"   },
+    { "name": "windows",              "configurePreset": "windows",              "configuration": "Release" },
+    { "name": "windows-vs2022",       "configurePreset": "windows-vs2022",       "configuration": "Release" },
+    { "name": "windows-cuda",         "configurePreset": "windows-cuda",         "configuration": "Release" },
+    { "name": "windows-cuda-vs2022",  "configurePreset": "windows-cuda-vs2022",  "configuration": "Release" }
   ],
   "testPresets": [
     { "name": "linux-dev",  "configurePreset": "linux-dev",  "output": { "outputOnFailure": true } },
-    { "name": "linux-cuda", "configurePreset": "linux-cuda", "output": { "outputOnFailure": true } }
+    { "name": "linux-cuda", "configurePreset": "linux-cuda", "output": { "outputOnFailure": true } },
+    { "name": "windows",    "configurePreset": "windows",    "output": { "outputOnFailure": true }, "configuration": "Release" }
   ]
 }

@@ -203,12 +203,18 @@ Result<JobStats> Pipeline::run(JobRequest req, std::stop_token stop, ProgressCal
 
         auto block_futs_res = reader.submit(entry, stop);
         if (!block_futs_res) return std::move(block_futs_res).error();
-        auto block_futs = std::move(block_futs_res).value();
+        // Wrap the futures in a shared_ptr so the per-file task lambda stays
+        // trivially copyable. std::future is move-only, and MSVC's thread-pool
+        // plumbing (std::function / std::packaged_task internals) instantiates
+        // copy paths even when only move semantics are exercised at runtime.
+        auto futs_ptr = std::make_shared<std::vector<std::future<Result<FileBlock>>>>(
+            std::move(block_futs_res).value());
 
         file_futures.emplace_back(cpu_pool_.submit(
-            [entry, futs = std::move(block_futs), use_gpu, stop,
+            [entry, futs_ptr, use_gpu, stop,
              cpu = codecs.cpu.get(), gpu = codecs.gpu.get(), &gpu_mutex]() mutable
             -> Result<PreparedFile> {
+                auto& futs = *futs_ptr;
                 Result<std::vector<CompressedBlock>> blocks_res = make_error(StatusCode::Internal, "unset");
                 if (use_gpu) {
                     // Simple per-file batching: collect every block in pinned

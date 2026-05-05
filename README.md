@@ -37,7 +37,7 @@ on the `JobHandle` back through every worker.
 |-----------|----------|-----------|
 | `core/`   | C++20 + CUDA static library (`collapsar_core`). Public headers in `core/include/collapsar/`. | Linux, Windows |
 | `cli/`    | `collapsar` command-line driver. Useful for development and CI. | Linux, Windows |
-| `bridge/` | C++/CLI assembly (`Collapsar.Bridge.dll`) marshalling the native engine to .NET. | Windows only |
+| `bridge/` | Flat C-ABI shared library (`Collapsar.Bridge.dll`) consumed via P/Invoke. | Windows only |
 | `gui/`    | C# + WinUI 3 desktop app (`Collapsar.App`). MVVM, packaged via WinAppSDK. | Windows only |
 | `cmake/`  | `FindNVCOMP.cmake` and helpers. | — |
 | `docs/`   | Architecture notes. | — |
@@ -50,11 +50,11 @@ on the `JobHandle` back through every worker.
 |------|---------|-------|
 | CMake | 3.26+ | Required for CUDA + presets. |
 | C++ compiler | MSVC 19.38+ / clang 17 / gcc 13 | C++20. |
-| CUDA Toolkit | 12.3+ | Optional. Set `-DCOLLAPSAR_WITH_CUDA=OFF` to skip. |
-| nvCOMP | 4.0+ | Required when CUDA is enabled. Set `NVCOMP_ROOT` env var. |
-| zlib | system or vendored | Used by the CPU path and for CRC32. |
+| CUDA Toolkit | 12.3+ | Optional. The build auto-detects and falls back to CPU-only if CUDA or nvCOMP is missing. |
+| nvCOMP | 4.0+ | Optional, required only for GPU path. Set `NVCOMP_ROOT` env var. |
+| zlib | system or vcpkg | Used by the CPU path and for CRC32. On Windows the build auto-discovers `C:\vcpkg\installed\x64-windows`. |
 | .NET SDK | 8.0+ | GUI only. |
-| WinAppSDK | 1.5+ | GUI only. |
+| WinAppSDK | 1.5+ | GUI only — restored automatically via NuGet. |
 
 ### Linux (core + CLI, GPU optional)
 
@@ -62,16 +62,57 @@ on the `JobHandle` back through every worker.
 cmake --preset linux-dev
 cmake --build --preset linux-dev
 ctest --preset linux-dev
-./build/linux-dev/cli/collapsar --help
+./build/linux-dev/bin/collapsar --help
 ```
 
-### Windows (full stack)
+### Windows — CLI + GUI bridge (no GPU)
+
+This is the default Windows preset. It builds the static core library, the
+`collapsar.exe` CLI, the `Collapsar.Bridge.dll` shared library that the GUI
+P/Invokes into, and copies the runtime DLLs (zlib) next to each executable.
 
 ```powershell
-cmake --preset windows-cuda
-cmake --build --preset windows-cuda --config Release
-# Then open gui/Collapsar.App.sln in Visual Studio 2022 to build the GUI.
+cmake --preset windows
+cmake --build --preset windows
+ctest --test-dir build/windows -C Release --output-on-failure
+
+# Outputs land in build/windows/bin/Release/
+#   collapsar.exe
+#   Collapsar.Bridge.dll
+#   z.dll
+#   test_*.exe
 ```
+
+If you need to use Visual Studio 2022 instead of 2026, swap `windows` for
+`windows-vs2022` in both commands.
+
+### Windows — full stack with CUDA + nvCOMP
+
+```powershell
+$env:NVCOMP_ROOT = "C:\path\to\nvcomp"   # if not in a standard location
+cmake --preset windows-cuda
+cmake --build --preset windows-cuda
+```
+
+If nvCOMP is missing the configure step prints a warning and silently
+downgrades to a CPU-only build — the CLI exe will still be produced.
+
+### Windows — GUI
+
+The GUI references the bridge DLL via copy from the native build directory,
+so build the native side first, then:
+
+```powershell
+dotnet restore gui\Collapsar.App.csproj
+dotnet build  gui\Collapsar.App.csproj -c Release -p:Platform=x64
+
+# Run:
+.\gui\bin\x64\Release\net8.0-windows10.0.19041.0\Collapsar.App.exe
+```
+
+The csproj copies `Collapsar.Bridge.dll` and `z.dll` from
+`build/windows/bin/Release/` (or `build/windows-cuda/bin/Release/` if you
+built with CUDA) into the GUI's output directory automatically.
 
 ## Usage (CLI)
 
